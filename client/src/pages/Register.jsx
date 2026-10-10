@@ -15,7 +15,7 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirm) { toast.error('Passwords do not match'); return; }
-    if (password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
+    if (password.length < 8) { toast.error('Password must be at least 8 characters'); return; }
     setLoading(true);
     try {
       const user = await register(name, email, password);
@@ -63,7 +63,7 @@ export default function Register() {
             </div>
             <div className="form-group">
               <label htmlFor="reg-password">Password</label>
-              <input id="reg-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 6 characters" required />
+              <input id="reg-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters" required />
             </div>
             <div className="form-group">
               <label htmlFor="reg-confirm">Confirm Password</label>

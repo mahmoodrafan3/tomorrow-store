@@ -20,7 +20,8 @@ router.post('/validate', async (req, res) => {
       discount: result.discount,
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('[coupons] validate:', err?.message || err);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 });
 
