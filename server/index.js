@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
@@ -22,8 +23,10 @@ const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'https://tomorrow-store.vercel.app', // update when you know your Vercel URL
 ];
+// Pass the array directly — the cors package matches it natively. Passing a
+// function here would require calling its callback or every request hangs.
 app.use(cors({
-  origin: (origin) => ALLOWED_ORIGINS.includes(origin) || !origin,
+  origin: ALLOWED_ORIGINS,
   credentials: true,
 }));
 app.use(express.json());
