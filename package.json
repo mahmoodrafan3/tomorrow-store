@@ -1,0 +1,30 @@
+{
+  "name": "tomorrow-store",
+  "version": "1.0.0",
+  "description": "Tomorrow Clothing Brand - Modern 3D E-Commerce Store",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "nodemon server/index.js",
+    "client": "npm run dev --prefix client",
+    "seed": "node server/seeder.js",
+    "build": "npm run build --prefix client"
+  },
+  "keywords": ["ecommerce", "fashion", "mern"],
+  "author": "Tomorrow Brand",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "nodemon": "^3.1.10"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "express-async-handler": "^1.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.13.2",
+    "multer": "^1.4.5-lts.2"
+  }
+}
