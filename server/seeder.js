@@ -86,6 +86,110 @@ const products = [
     rating: 4.9,
     numReviews: 38,
   },
+  {
+    name: 'Selene Silk Slip Dress',
+    description: 'A bias-cut slip dress in lustrous mulberry silk. Fluid, minimal and quietly luxurious — the piece that carries you from daylight into the night.',
+    price: 6999,
+    category: 'Dresses',
+    image: '/images/product_dress.png',
+    sizes: ['XS', 'S', 'M', 'L'],
+    colors: ['Black', 'Cream'],
+    stock: 35,
+    featured: true,
+    rating: 4.8,
+    numReviews: 21,
+  },
+  {
+    name: 'Requiem Draped Maxi Dress',
+    description: 'A floor-grazing draped maxi in soft matte crepe. Sculpted at the shoulder, weightless through the body. Built for the ones who arrive last and are remembered first.',
+    price: 9499,
+    category: 'Dresses',
+    image: '/images/product_dress.png',
+    sizes: ['XS', 'S', 'M', 'L'],
+    colors: ['Black'],
+    stock: 22,
+    featured: false,
+    rating: 4.9,
+    numReviews: 15,
+  },
+  {
+    name: 'Midnight Cropped Hoodie',
+    description: 'A cropped cut of our heavyweight cotton hoodie, finished in deep midnight black. Raw-edge hem, dropped shoulders, and a boxy fit that sits exactly where it should.',
+    price: 4499,
+    category: 'Hoodies',
+    image: '/images/product_hoodie.png',
+    sizes: ['XS', 'S', 'M', 'L', 'XL'],
+    colors: ['Black', 'Cream'],
+    stock: 45,
+    featured: false,
+    rating: 4.7,
+    numReviews: 27,
+  },
+  {
+    name: 'Onyx Double-Breasted Blazer',
+    description: 'A sharp double-breasted blazer cut from structured Italian wool in deep onyx. Peak lapels, defined waist, uncompromising line.',
+    price: 11999,
+    category: 'Blazers',
+    image: '/images/product_blazer.png',
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Black', 'Cream'],
+    stock: 26,
+    featured: false,
+    rating: 4.8,
+    numReviews: 16,
+  },
+  {
+    name: 'Meridian Pleated Trousers',
+    description: 'Pressed-pleat trousers with a clean high waist and a straight fall through the leg. Tailoring that reads as effortlessness.',
+    price: 5499,
+    category: 'Trousers',
+    image: '/images/product_trousers.png',
+    sizes: ['XS', 'S', 'M', 'L', 'XL'],
+    colors: ['Black', 'Cream'],
+    stock: 38,
+    featured: false,
+    rating: 4.6,
+    numReviews: 19,
+  },
+  {
+    name: 'Solstice Oversized Shirt',
+    description: 'An oversized poplin shirt with a relaxed collar and a long, easy line. Crisp cream cotton with a soft, lived-in hand.',
+    price: 3299,
+    category: 'Shirts',
+    image: '/images/product_shirt.png',
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Cream', 'Black'],
+    stock: 55,
+    featured: false,
+    rating: 4.5,
+    numReviews: 33,
+  },
+  {
+    name: 'Umbra Belted Trench Coat',
+    description: 'A belted trench in weather-resistant cotton gabardine, cut long and worn open. The quiet centrepiece of a cold-weather wardrobe.',
+    price: 16999,
+    category: 'Coats',
+    image: '/images/product_coat.png',
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Black', 'Cream'],
+    stock: 18,
+    featured: true,
+    rating: 4.9,
+    numReviews: 11,
+  },
+  {
+    name: 'Prism Raglan Tee',
+    description: 'A raglan-sleeve tee in 260 GSM combed organic cotton. Subtle contrast seams and a clean straight hem — an everyday staple done properly.',
+    price: 2999,
+    category: 'T-Shirts',
+    image: '/images/product_tshirt.png',
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    colors: ['Black', 'Cream'],
+    stock: 65,
+    featured: false,
+    rating: 4.6,
+    numReviews: 44,
+  },
 ];
 
 const coupons = [
@@ -96,12 +200,37 @@ const coupons = [
 
 const seedDB = async () => {
   await connectDB();
+
+  // `node seeder.js --append` adds any products that are missing without
+  // touching existing products, orders, users or coupons. Safe to re-run and
+  // the right mode for a database that is already live.
+  if (process.argv.includes('--append')) {
+    let added = 0;
+    let skipped = 0;
+
+    for (const product of products) {
+      const exists = await Product.findOne({ name: product.name });
+      if (exists) {
+        skipped += 1;
+        continue;
+      }
+      await Product.create(product);
+      added += 1;
+    }
+
+    const total = await Product.countDocuments();
+    console.log(`✅ Added ${added} product(s), skipped ${skipped} already present.`);
+    console.log(`📦 Total products in database: ${total}`);
+    mongoose.connection.close();
+    return;
+  }
+
   await Product.deleteMany();
   await User.deleteMany();
   await Coupon.deleteMany();
 
   // Create admin user
-  const admin = await User.create({
+  await User.create({
     name: 'Tomorrow Admin',
     email: 'admin@tomorrow.com',
     password: 'admin123',

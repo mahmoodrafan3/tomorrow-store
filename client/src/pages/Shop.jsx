@@ -7,7 +7,7 @@ import ProductCard from '../components/ProductCard';
 import Footer from '../components/Footer';
 import { useReveal } from '../hooks/useReveal';
 
-const CATEGORIES = ['All', 'Hoodies', 'Blazers', 'Trousers', 'T-Shirts', 'Shirts', 'Coats'];
+const CATEGORIES = ['All', 'Hoodies', 'Blazers', 'Trousers', 'T-Shirts', 'Shirts', 'Coats', 'Dresses'];
 
 export default function Shop() {
   const [products, setProducts] = useState([]);
