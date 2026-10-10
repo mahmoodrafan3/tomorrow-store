@@ -1,25 +1,43 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import SettingsShell from './SettingsShell';
 import Toggle from './Toggle';
+import { useAuth } from '../../context/AuthContext';
 
-const NOTICE = 'Preview only — notification preferences are not saved yet.';
+const toastStyle = {
+  style: { fontFamily: 'var(--font-sans)', background: 'var(--black)', color: 'var(--cream)', borderRadius: '4px' },
+};
+
+// Fallbacks mirror the schema defaults so an account created before these
+// preferences existed still renders the intended starting state.
+const DEFAULTS = {
+  orderUpdates: true,
+  shippingAlerts: true,
+  offers: false,
+  newsletter: true,
+  sms: false,
+};
 
 export default function Notifications() {
-  const [prefs, setPrefs] = useState({
-    orderUpdates: true,
-    shippingAlerts: true,
-    offers: false,
-    newsletter: true,
-    sms: false,
-  });
+  const { user, savePreferences } = useAuth();
+  const prefs = { ...DEFAULTS, ...(user?.preferences?.notifications || {}) };
+  const [saving, setSaving] = useState(false);
 
-  const set = (key) => (value) => setPrefs((p) => ({ ...p, [key]: value }));
+  const set = (key) => async (value) => {
+    setSaving(true);
+    try {
+      await savePreferences({ notifications: { [key]: value } });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not save that preference', toastStyle);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <SettingsShell
       title="Notification Settings"
-      subtitle="Choose what you want to hear about."
-      notice={NOTICE}
+      subtitle="Choose what you want to hear about. Changes save automatically."
     >
       <div className="toggle-list">
         <Toggle
@@ -58,6 +76,8 @@ export default function Notifications() {
           onChange={set('sms')}
         />
       </div>
+
+      {saving && <p className="settings-sub">Saving...</p>}
     </SettingsShell>
   );
 }

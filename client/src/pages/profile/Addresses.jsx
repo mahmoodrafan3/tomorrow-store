@@ -1,43 +1,62 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import SettingsShell from './SettingsShell';
+import { useAuth } from '../../context/AuthContext';
 
-const NOTICE = 'Preview only — addresses are not saved to your account yet.';
+const toastStyle = {
+  style: { fontFamily: 'var(--font-sans)', background: 'var(--black)', color: 'var(--cream)', borderRadius: '4px' },
+};
 
 const EMPTY = { label: 'Home', name: '', phone: '', address: '', city: '', state: '', postalCode: '' };
 
 export default function Addresses() {
-  // Kept in component state: nothing is persisted while this is a preview.
-  const [addresses, setAddresses] = useState([]);
+  const { user, addAddress, removeAddress } = useAuth();
+  const addresses = user?.addresses || [];
+
   const [form, setForm] = useState(EMPTY);
   const [adding, setAdding] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const change = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const add = (e) => {
+  const add = async (e) => {
     e.preventDefault();
-    setAddresses([...addresses, { ...form, id: Date.now() }]);
-    setForm(EMPTY);
-    setAdding(false);
-    toast(NOTICE, {
-      style: { fontFamily: 'var(--font-sans)', background: 'var(--black)', color: 'var(--cream)', borderRadius: '4px' },
-    });
+    setBusy(true);
+    try {
+      await addAddress(form);
+      setForm(EMPTY);
+      setAdding(false);
+      toast.success('Address saved', toastStyle);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not save that address', toastStyle);
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const remove = (id) => setAddresses(addresses.filter((a) => a.id !== id));
+  const remove = async (id) => {
+    try {
+      await removeAddress(id);
+      toast.success('Address removed', toastStyle);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not remove that address', toastStyle);
+    }
+  };
 
   return (
-    <SettingsShell title="Saved Addresses" subtitle="Where your orders should be delivered." notice={NOTICE}>
+    <SettingsShell title="Saved Addresses" subtitle="Where your orders should be delivered.">
       {addresses.length === 0 && !adding && (
         <p className="settings-empty">You haven&apos;t saved any addresses yet.</p>
       )}
 
       <div className="address-list">
         {addresses.map((a) => (
-          <article className="address-card" key={a.id}>
+          <article className="address-card" key={a._id}>
             <div className="address-card-head">
-              <span className="badge badge-black">{a.label}</span>
-              <button type="button" className="address-remove" onClick={() => remove(a.id)}>Remove</button>
+              <span className="badge badge-black">{a.label || 'Home'}</span>
+              <button type="button" className="address-remove" onClick={() => remove(a._id)}>
+                Remove
+              </button>
             </div>
             <p className="address-name">{a.name || 'Name'} · {a.phone || 'Phone'}</p>
             <p className="address-line">
@@ -72,11 +91,11 @@ export default function Addresses() {
             </div>
             <div className="settings-field settings-field-full">
               <label htmlFor="ad-address">Street Address</label>
-              <input id="ad-address" name="address" value={form.address} onChange={change} />
+              <input id="ad-address" name="address" value={form.address} onChange={change} required />
             </div>
             <div className="settings-field">
               <label htmlFor="ad-city">City</label>
-              <input id="ad-city" name="city" value={form.city} onChange={change} />
+              <input id="ad-city" name="city" value={form.city} onChange={change} required />
             </div>
             <div className="settings-field">
               <label htmlFor="ad-state">State</label>
@@ -85,8 +104,14 @@ export default function Addresses() {
           </div>
 
           <div className="settings-actions">
-            <button type="submit" className="btn btn-primary">Save Address</button>
-            <button type="button" className="btn btn-outline" onClick={() => { setAdding(false); setForm(EMPTY); }}>
+            <button type="submit" className="btn btn-primary" disabled={busy}>
+              {busy ? 'Saving...' : 'Save Address'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => { setAdding(false); setForm(EMPTY); }}
+            >
               Cancel
             </button>
           </div>

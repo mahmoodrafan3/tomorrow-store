@@ -14,6 +14,11 @@ const publicUser = (user) => ({
   name: user.name,
   email: user.email,
   isAdmin: user.isAdmin,
+  phone: user.phone || '',
+  gender: user.gender || '',
+  dob: user.dob || '',
+  addresses: user.addresses || [],
+  preferences: user.preferences || {},
 });
 
 // POST /api/auth/register — customers only
@@ -73,6 +78,98 @@ router.post('/admin/login', async (req, res) => {
 // GET /api/auth/admin/me — validate an existing admin session.
 router.get('/admin/me', protect, admin, (req, res) => {
   res.json(publicUser(req.user));
+});
+
+// GET /api/auth/me — refresh the signed-in customer's profile.
+router.get('/me', protect, (req, res) => {
+  res.json(publicUser(req.user));
+});
+
+// PUT /api/auth/profile — save editable personal details.
+router.put('/profile', protect, async (req, res) => {
+  try {
+    const { name, email, phone, gender, dob } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Keep emails unique — reject a change to one another account holds.
+    if (email && email !== user.email) {
+      const taken = await User.findOne({ email, _id: { $ne: user._id } });
+      if (taken) return res.status(400).json({ message: 'That email is already in use' });
+      user.email = email;
+    }
+
+    if (name !== undefined) user.name = name;
+    if (phone !== undefined) user.phone = phone;
+    if (gender !== undefined) user.gender = gender;
+    if (dob !== undefined) user.dob = dob;
+
+    const updated = await user.save();
+    res.json(publicUser(updated));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /api/auth/addresses — save a new delivery address on the account.
+router.post('/addresses', protect, async (req, res) => {
+  try {
+    const { label, name, phone, address, city, state, postalCode } = req.body;
+    if (!address?.trim() || !city?.trim()) {
+      return res.status(400).json({ message: 'Street address and city are required' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.addresses.push({ label, name, phone, address, city, state, postalCode });
+    await user.save();
+    res.status(201).json(publicUser(user));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// DELETE /api/auth/addresses/:addressId — remove one saved address.
+router.delete('/addresses/:addressId', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const before = user.addresses.length;
+    user.addresses = user.addresses.filter(
+      (a) => a._id.toString() !== req.params.addressId
+    );
+    if (user.addresses.length === before) {
+      return res.status(404).json({ message: 'Address not found' });
+    }
+
+    await user.save();
+    res.json(publicUser(user));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// PUT /api/auth/preferences — merge notification, privacy and language choices.
+router.put('/preferences', protect, async (req, res) => {
+  try {
+    const { notifications, privacy, language } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (notifications) Object.assign(user.preferences.notifications, notifications);
+    if (privacy) Object.assign(user.preferences.privacy, privacy);
+    if (language !== undefined) user.preferences.language = language;
+
+    // Subdocument values were assigned in place, so flag the path explicitly.
+    user.markModified('preferences');
+    await user.save();
+
+    res.json(publicUser(user));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 export default router;
